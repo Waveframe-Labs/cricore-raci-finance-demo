@@ -4,8 +4,8 @@ title: "CRI-CORE RACI Finance Demo Runner"
 filetype: "operational"
 type: "non-normative"
 domain: "case-study"
-version: "0.1.0"
-doi: "TBD-0.1.0"
+version: "0.2.0"
+doi: "TBD-0.2.0"
 status: "Active"
 created: "2026-03-02"
 updated: "2026-03-02"
@@ -32,7 +32,7 @@ dependencies:
   - "../scenarios/budget_reallocation/proposal.json"
 
 anchors:
-  - "RACI-FinanceDemo-Runner-v0.1.0"
+  - "RACI-FinanceDemo-Runner-v0.2.0"
 ---
 """
 
@@ -46,6 +46,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Tuple
 
 from cricore.enforcement.execution import run_enforcement_pipeline
+from cricore.integrity.finalize import finalize_run_integrity
 
 
 # -----------------------------------------------------------------------------
@@ -122,7 +123,6 @@ class Actors:
 
 
 def _actors_valid() -> Actors:
-    # IDs are intentionally stable within a demo so the "reused identity" violation is obvious.
     return Actors(
         proposer_ai={"id": "agent-budget-optimizer", "type": "service", "role": "proposer"},
         finance_manager={"id": "finance-mgr-001", "type": "human", "role": "responsible"},
@@ -132,7 +132,6 @@ def _actors_valid() -> Actors:
 
 
 def _run_context_valid(actors: Actors) -> Dict[str, Any]:
-    # Structural-only inputs for CRI-CORE. No semantics are interpreted by the kernel.
     return {
         "identities": {
             "actors": [
@@ -142,10 +141,7 @@ def _run_context_valid(actors: Actors) -> Dict[str, Any]:
                 actors.compliance,
             ],
             "required_roles": ["responsible", "accountable"],
-            "conflict_flags": {
-                # Example: set to True to force a structural conflict failure
-                # "finance-mgr-001": True
-            },
+            "conflict_flags": {},
         },
         "integrity": {
             "workflow_execution_ref": "demo://raci-finance/budget-reallocation",
@@ -160,14 +156,11 @@ def _run_context_valid(actors: Actors) -> Dict[str, Any]:
 
 
 def _run_context_violation_reused_identity(actors: Actors) -> Dict[str, Any]:
-    # Reuse the SAME identity across 2 required roles:
-    # finance-mgr-001 is both "responsible" and "accountable" -> should FAIL independence.
     reused = {"id": "finance-mgr-001", "type": "human"}
     return {
         "identities": {
             "actors": [
                 actors.proposer_ai,
-                {"**": "ignored"},  # demonstrates that invalid actor entries are ignored structurally
                 {"id": reused["id"], "type": reused["type"], "role": "responsible"},
                 {"id": reused["id"], "type": reused["type"], "role": "accountable"},
                 actors.compliance,
@@ -191,7 +184,6 @@ def _materialize_run(run_root: Path, *, run_id: str, run_context: Dict[str, Any]
     run_root.mkdir(parents=True, exist_ok=True)
     (run_root / "validation").mkdir(parents=True, exist_ok=True)
 
-    # 1) contract.json (required for structure stage)
     _write_json(
         run_root / "contract.json",
         {
@@ -201,12 +193,11 @@ def _materialize_run(run_root: Path, *, run_id: str, run_context: Dict[str, Any]
         },
     )
 
-    # 2) Scenario inputs copied into the run for auditability
     _copy_if_exists(SCENARIO_ROOT / "policy.yaml", run_root / "policy.yaml")
     _copy_if_exists(SCENARIO_ROOT / "proposal.json", run_root / "proposal.json")
 
-    # 3) Minimal run artifacts expected by CRI-CORE structure checks (kernel-contract dependent).
     _write_json(run_root / "randomness.json", {"run_id": run_id, "deterministic": True})
+
     _write_json(
         run_root / "approval.json",
         {
@@ -215,26 +206,14 @@ def _materialize_run(run_root: Path, *, run_id: str, run_context: Dict[str, Any]
             "approved_at_utc": _utc_now_iso(),
         },
     )
+
     _write_json(run_root / "validation" / "invariant_results.json", {"run_id": run_id})
 
     _write_text(
         run_root / "report.md",
-        "\n".join(
-            [
-                "# Finance Demo Run Report",
-                "",
-                f"run_id: {run_id}",
-                f"created_utc: {_utc_now_iso()}",
-                "",
-                "This run demonstrates CRI-CORE commit gating for a budget reallocation scenario.",
-                "Policy/proposal are included as run-local artifacts for audit replay.",
-                "",
-            ]
-        )
-        + "\n"
+        f"# Finance Demo Run Report\n\nrun_id: {run_id}\n"
     )
 
-    # 4) Record run_context used (not required by kernel, but useful for replay)
     _write_json(run_root / "run_context.json", run_context)
 
 
@@ -247,6 +226,9 @@ def _execute(label: str, *, run_context: Dict[str, Any]) -> Tuple[Path, bool]:
     run_root = OUTPUTS_ROOT / run_id
 
     _materialize_run(run_root, run_id=run_id, run_context=run_context)
+
+    # 🔒 CRITICAL STEP — build integrity artifacts before enforcement
+    finalize_run_integrity(run_root)
 
     results, commit_allowed = run_enforcement_pipeline(
         str(run_root),
@@ -267,8 +249,6 @@ def main() -> None:
 
     actors = _actors_valid()
 
-    # Default: run both scenarios.
-    # You can pass: "valid" or "violation" as the first CLI arg to run one.
     import sys
     choice = (sys.argv[1].strip().lower() if len(sys.argv) > 1 else "all")
 

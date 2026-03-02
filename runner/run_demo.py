@@ -4,8 +4,8 @@ title: "CRI-CORE RACI Finance Demo Runner"
 filetype: "operational"
 type: "non-normative"
 domain: "case-study"
-version: "0.2.0"
-doi: "TBD-0.2.0"
+version: "0.3.0"
+doi: "TBD-0.3.0"
 status: "Active"
 created: "2026-03-02"
 updated: "2026-03-02"
@@ -26,13 +26,12 @@ copyright:
   year: "2026"
 
 ai_assisted: "partial"
-
 dependencies:
   - "../scenarios/budget_reallocation/policy.yaml"
   - "../scenarios/budget_reallocation/proposal.json"
 
 anchors:
-  - "RACI-FinanceDemo-Runner-v0.2.0"
+  - "CRI-CORE-RACI-Finance-Runner-v0.3.0"
 ---
 """
 
@@ -57,10 +56,12 @@ ROOT = Path(__file__).resolve().parents[1]
 SCENARIO_ROOT = ROOT / "scenarios" / "budget_reallocation"
 OUTPUTS_ROOT = ROOT / "outputs" / "runs"
 
-# IMPORTANT:
-# - This is NOT the kernel version; it is the run contract version enforced by CRI-CORE's structure stage.
-# - contract_version >= 0.3.0 enables binding.json + SEAL.json generation during integrity finalization.
+# This is the RUN CONTRACT version enforced by CRI-CORE structure + binding rules.
+# v0.3.0 enables binding.json + SEAL.json expectations (claim_ref becomes required).
 EXPECTED_CONTRACT_VERSION = "0.3.0"
+
+# Run-local claim file required for contract_version >= 0.3.0
+RUN_CLAIM_FILENAME = "claim.json"
 
 
 # -----------------------------------------------------------------------------
@@ -123,6 +124,7 @@ class Actors:
 
 
 def _actors_valid() -> Actors:
+    # Stable IDs so the violation case is visually obvious.
     return Actors(
         proposer_ai={"id": "agent-budget-optimizer", "type": "service", "role": "proposer"},
         finance_manager={"id": "finance-mgr-001", "type": "human", "role": "responsible"},
@@ -132,6 +134,7 @@ def _actors_valid() -> Actors:
 
 
 def _run_context_valid(actors: Actors) -> Dict[str, Any]:
+    # Structural-only inputs for CRI-CORE. Kernel does not interpret semantics.
     return {
         "identities": {
             "actors": [
@@ -156,11 +159,13 @@ def _run_context_valid(actors: Actors) -> Dict[str, Any]:
 
 
 def _run_context_violation_reused_identity(actors: Actors) -> Dict[str, Any]:
+    # Reuse SAME identity across required roles -> should FAIL independence.
     reused = {"id": "finance-mgr-001", "type": "human"}
     return {
         "identities": {
             "actors": [
                 actors.proposer_ai,
+                {"**": "ignored"},  # invalid actor entry to show structural ignoring
                 {"id": reused["id"], "type": reused["type"], "role": "responsible"},
                 {"id": reused["id"], "type": reused["type"], "role": "accountable"},
                 actors.compliance,
@@ -184,20 +189,36 @@ def _materialize_run(run_root: Path, *, run_id: str, run_context: Dict[str, Any]
     run_root.mkdir(parents=True, exist_ok=True)
     (run_root / "validation").mkdir(parents=True, exist_ok=True)
 
+    # 0) Run-local claim artifact (opaque to CRI-CORE, required for binding >= 0.3.0)
+    _write_json(
+        run_root / RUN_CLAIM_FILENAME,
+        {
+            "claim_id": f"claim::{run_id}",
+            "scenario": "budget_reallocation",
+            "summary": "Proposed budget reallocation for underperforming unit -> higher growth region.",
+            "amount_usd": 18_400_000,
+            "currency": "USD",
+            "created_utc": _utc_now_iso(),
+        },
+    )
+
+    # 1) contract.json (structure stage input; claim_ref required for contract_version >= 0.3.0)
     _write_json(
         run_root / "contract.json",
         {
             "contract_version": EXPECTED_CONTRACT_VERSION,
             "run_id": run_id,
             "created_utc": _utc_now_iso(),
+            "claim_ref": RUN_CLAIM_FILENAME,  # critical: required for binding rules >= 0.3.0
         },
     )
 
+    # 2) Scenario inputs copied into the run for auditability
     _copy_if_exists(SCENARIO_ROOT / "policy.yaml", run_root / "policy.yaml")
     _copy_if_exists(SCENARIO_ROOT / "proposal.json", run_root / "proposal.json")
 
+    # 3) Minimal run artifacts expected by CRI-CORE structure checks.
     _write_json(run_root / "randomness.json", {"run_id": run_id, "deterministic": True})
-
     _write_json(
         run_root / "approval.json",
         {
@@ -206,14 +227,26 @@ def _materialize_run(run_root: Path, *, run_id: str, run_context: Dict[str, Any]
             "approved_at_utc": _utc_now_iso(),
         },
     )
-
     _write_json(run_root / "validation" / "invariant_results.json", {"run_id": run_id})
 
     _write_text(
         run_root / "report.md",
-        f"# Finance Demo Run Report\n\nrun_id: {run_id}\n"
+        "\n".join(
+            [
+                "# Finance Demo Run Report",
+                "",
+                f"run_id: {run_id}",
+                f"created_utc: {_utc_now_iso()}",
+                "",
+                "This run demonstrates CRI-CORE commit gating for a budget reallocation scenario.",
+                "Policy/proposal are included as run-local artifacts for audit replay.",
+                "",
+            ]
+        )
+        + "\n"
     )
 
+    # 4) Record run_context used (not required by kernel, but useful for replay)
     _write_json(run_root / "run_context.json", run_context)
 
 
@@ -227,7 +260,8 @@ def _execute(label: str, *, run_context: Dict[str, Any]) -> Tuple[Path, bool]:
 
     _materialize_run(run_root, run_id=run_id, run_context=run_context)
 
-    # 🔒 CRITICAL STEP — build integrity artifacts before enforcement
+    # Optional but recommended for the demo:
+    # Finalize integrity artifacts BEFORE enforcement so integrity stage passes.
     finalize_run_integrity(run_root)
 
     results, commit_allowed = run_enforcement_pipeline(
@@ -249,6 +283,8 @@ def main() -> None:
 
     actors = _actors_valid()
 
+    # Default: run both scenarios.
+    # You can pass: "valid" or "violation" as the first CLI arg to run one.
     import sys
     choice = (sys.argv[1].strip().lower() if len(sys.argv) > 1 else "all")
 

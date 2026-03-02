@@ -4,8 +4,8 @@ title: "CRI-CORE RACI Finance Demo Runner"
 filetype: "operational"
 type: "non-normative"
 domain: "case-study"
-version: "0.3.2"
-doi: "TBD-0.3.2"
+version: "0.3.3"
+doi: "TBD-0.3.3"
 status: "Active"
 created: "2026-03-02"
 updated: "2026-03-02"
@@ -32,7 +32,7 @@ dependencies:
   - "../scenarios/budget_reallocation/proposal.json"
 
 anchors:
-  - "CRI-CORE-RACI-Finance-Runner-v0.3.2"
+  - "CRI-CORE-RACI-Finance-Runner-v0.3.3"
 ---
 """
 
@@ -46,6 +46,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Mapping
 
+import cricore
 from cricore.enforcement.execution import run_enforcement_pipeline
 from cricore.integrity.finalize import finalize_run_integrity
 
@@ -112,9 +113,11 @@ def _list_run_dir(run_root: Path) -> None:
 def _print_replay_footer(run_root: Path) -> None:
     print("\nReplay This Run Independently:")
     print(f"  cd {run_root}")
-    print("  python -c \"from cricore.enforcement.execution import run_enforcement_pipeline; "
-          "results, commit_allowed = run_enforcement_pipeline('.', expected_contract_version='0.3.0'); "
-          "print(commit_allowed)\"")
+    print(
+        "  python -c \"from cricore.enforcement.execution import run_enforcement_pipeline; "
+        "results, commit_allowed = run_enforcement_pipeline('.', expected_contract_version='0.3.0'); "
+        "print(commit_allowed)\""
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -229,6 +232,8 @@ def _execute(label: str, run_context: Dict[str, Any]) -> None:
     run_id = _new_run_id(label)
     run_root = OUTPUTS_ROOT / run_id
 
+    print(f"\nKernel Version: {cricore.__version__}")
+
     _materialize_run(run_root, run_id=run_id, run_context=run_context)
     finalize_run_integrity(run_root)
 
@@ -277,4 +282,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    

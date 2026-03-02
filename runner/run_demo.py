@@ -4,8 +4,8 @@ title: "CRI-CORE RACI Finance Demo Runner"
 filetype: "operational"
 type: "non-normative"
 domain: "case-study"
-version: "0.3.0"
-doi: "TBD-0.3.0"
+version: "0.3.1"
+doi: "TBD-0.3.1"
 status: "Active"
 created: "2026-03-02"
 updated: "2026-03-02"
@@ -26,12 +26,13 @@ copyright:
   year: "2026"
 
 ai_assisted: "partial"
+
 dependencies:
   - "../scenarios/budget_reallocation/policy.yaml"
   - "../scenarios/budget_reallocation/proposal.json"
 
 anchors:
-  - "CRI-CORE-RACI-Finance-Runner-v0.3.0"
+  - "CRI-CORE-RACI-Finance-Runner-v0.3.1"
 ---
 """
 
@@ -39,6 +40,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -56,11 +58,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCENARIO_ROOT = ROOT / "scenarios" / "budget_reallocation"
 OUTPUTS_ROOT = ROOT / "outputs" / "runs"
 
-# This is the RUN CONTRACT version enforced by CRI-CORE structure + binding rules.
-# v0.3.0 enables binding.json + SEAL.json expectations (claim_ref becomes required).
 EXPECTED_CONTRACT_VERSION = "0.3.0"
-
-# Run-local claim file required for contract_version >= 0.3.0
 RUN_CLAIM_FILENAME = "claim.json"
 
 
@@ -72,7 +70,7 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _new_run_id(prefix: str = "RACI-RUN") -> str:
+def _new_run_id(prefix: str) -> str:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     micros = datetime.now(timezone.utc).strftime("%f")
     return f"{prefix}-{stamp}-{micros}"
@@ -102,13 +100,13 @@ def _print_stage_results(results: List[Any]) -> None:
 
 
 def _list_run_dir(run_root: Path) -> None:
-    print("\nRun directory contents:")
+    print(f"\nRun directory: {run_root}")
+    print("Artifacts:")
     for p in sorted(run_root.rglob("*")):
         if p.is_dir():
             continue
         rel = p.relative_to(run_root)
-        size = p.stat().st_size
-        print(f"  - {rel.as_posix()} ({size} bytes)")
+        print(f"  - {rel.as_posix()}")
 
 
 # -----------------------------------------------------------------------------
@@ -124,7 +122,6 @@ class Actors:
 
 
 def _actors_valid() -> Actors:
-    # Stable IDs so the violation case is visually obvious.
     return Actors(
         proposer_ai={"id": "agent-budget-optimizer", "type": "service", "role": "proposer"},
         finance_manager={"id": "finance-mgr-001", "type": "human", "role": "responsible"},
@@ -134,7 +131,6 @@ def _actors_valid() -> Actors:
 
 
 def _run_context_valid(actors: Actors) -> Dict[str, Any]:
-    # Structural-only inputs for CRI-CORE. Kernel does not interpret semantics.
     return {
         "identities": {
             "actors": [
@@ -159,13 +155,11 @@ def _run_context_valid(actors: Actors) -> Dict[str, Any]:
 
 
 def _run_context_violation_reused_identity(actors: Actors) -> Dict[str, Any]:
-    # Reuse SAME identity across required roles -> should FAIL independence.
     reused = {"id": "finance-mgr-001", "type": "human"}
     return {
         "identities": {
             "actors": [
                 actors.proposer_ai,
-                {"**": "ignored"},  # invalid actor entry to show structural ignoring
                 {"id": reused["id"], "type": reused["type"], "role": "responsible"},
                 {"id": reused["id"], "type": reused["type"], "role": "accountable"},
                 actors.compliance,
@@ -189,64 +183,35 @@ def _materialize_run(run_root: Path, *, run_id: str, run_context: Dict[str, Any]
     run_root.mkdir(parents=True, exist_ok=True)
     (run_root / "validation").mkdir(parents=True, exist_ok=True)
 
-    # 0) Run-local claim artifact (opaque to CRI-CORE, required for binding >= 0.3.0)
+    # Claim artifact (opaque to kernel, required for >=0.3.0 binding rules)
     _write_json(
         run_root / RUN_CLAIM_FILENAME,
         {
             "claim_id": f"claim::{run_id}",
             "scenario": "budget_reallocation",
-            "summary": "Proposed budget reallocation for underperforming unit -> higher growth region.",
             "amount_usd": 18_400_000,
-            "currency": "USD",
             "created_utc": _utc_now_iso(),
         },
     )
 
-    # 1) contract.json (structure stage input; claim_ref required for contract_version >= 0.3.0)
+    # Contract referencing claim
     _write_json(
         run_root / "contract.json",
         {
             "contract_version": EXPECTED_CONTRACT_VERSION,
             "run_id": run_id,
             "created_utc": _utc_now_iso(),
-            "claim_ref": RUN_CLAIM_FILENAME,  # critical: required for binding rules >= 0.3.0
+            "claim_ref": RUN_CLAIM_FILENAME,
         },
     )
 
-    # 2) Scenario inputs copied into the run for auditability
     _copy_if_exists(SCENARIO_ROOT / "policy.yaml", run_root / "policy.yaml")
     _copy_if_exists(SCENARIO_ROOT / "proposal.json", run_root / "proposal.json")
 
-    # 3) Minimal run artifacts expected by CRI-CORE structure checks.
     _write_json(run_root / "randomness.json", {"run_id": run_id, "deterministic": True})
-    _write_json(
-        run_root / "approval.json",
-        {
-            "run_id": run_id,
-            "approver": {"id": "cfo-001", "type": "human"},
-            "approved_at_utc": _utc_now_iso(),
-        },
-    )
+    _write_json(run_root / "approval.json", {"run_id": run_id})
     _write_json(run_root / "validation" / "invariant_results.json", {"run_id": run_id})
-
-    _write_text(
-        run_root / "report.md",
-        "\n".join(
-            [
-                "# Finance Demo Run Report",
-                "",
-                f"run_id: {run_id}",
-                f"created_utc: {_utc_now_iso()}",
-                "",
-                "This run demonstrates CRI-CORE commit gating for a budget reallocation scenario.",
-                "Policy/proposal are included as run-local artifacts for audit replay.",
-                "",
-            ]
-        )
-        + "\n"
-    )
-
-    # 4) Record run_context used (not required by kernel, but useful for replay)
+    _write_text(run_root / "report.md", f"# Finance Demo Run\n\nrun_id: {run_id}\n")
     _write_json(run_root / "run_context.json", run_context)
 
 
@@ -254,14 +219,13 @@ def _materialize_run(run_root: Path, *, run_id: str, run_context: Dict[str, Any]
 # Execution
 # -----------------------------------------------------------------------------
 
-def _execute(label: str, *, run_context: Dict[str, Any]) -> Tuple[Path, bool]:
-    run_id = _new_run_id(prefix=label)
+def _execute(label: str, run_context: Dict[str, Any]) -> None:
+    run_id = _new_run_id(label)
     run_root = OUTPUTS_ROOT / run_id
 
     _materialize_run(run_root, run_id=run_id, run_context=run_context)
 
-    # Optional but recommended for the demo:
-    # Finalize integrity artifacts BEFORE enforcement so integrity stage passes.
+    # Build binding + SEAL artifacts before enforcement
     finalize_run_integrity(run_root)
 
     results, commit_allowed = run_enforcement_pipeline(
@@ -272,27 +236,32 @@ def _execute(label: str, *, run_context: Dict[str, Any]) -> Tuple[Path, bool]:
 
     print(f"\n== {label} ==")
     _print_stage_results(results)
-    print(f"COMMIT: {'allowed' if commit_allowed else 'blocked'}")
+    print(f"\nCOMMIT: {'allowed' if commit_allowed else 'blocked'}")
     _list_run_dir(run_root)
 
-    return run_root, bool(commit_allowed)
 
+# -----------------------------------------------------------------------------
+# CLI Entry
+# -----------------------------------------------------------------------------
 
 def main() -> None:
-    OUTPUTS_ROOT.mkdir(parents=True, exist_ok=True)
+    if len(sys.argv) != 2:
+        print("Usage:")
+        print("  python runner/run_demo.py valid")
+        print("  python runner/run_demo.py violation")
+        return
 
+    OUTPUTS_ROOT.mkdir(parents=True, exist_ok=True)
     actors = _actors_valid()
 
-    # Default: run both scenarios.
-    # You can pass: "valid" or "violation" as the first CLI arg to run one.
-    import sys
-    choice = (sys.argv[1].strip().lower() if len(sys.argv) > 1 else "all")
+    choice = sys.argv[1].strip().lower()
 
-    if choice in ("valid", "all"):
-        _execute("VALID", run_context=_run_context_valid(actors))
-
-    if choice in ("violation", "all"):
-        _execute("VIOLATION-REUSED-IDENTITY", run_context=_run_context_violation_reused_identity(actors))
+    if choice == "valid":
+        _execute("VALID", _run_context_valid(actors))
+    elif choice == "violation":
+        _execute("VIOLATION-REUSED-IDENTITY", _run_context_violation_reused_identity(actors))
+    else:
+        print("Invalid option. Use 'valid' or 'violation'.")
 
 
 if __name__ == "__main__":

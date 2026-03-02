@@ -3,11 +3,11 @@ title: "CRI-CORE RACI Finance Demo — Executable Accountability in an Agentic E
 filetype: "documentation"
 type: "non-normative"
 domain: "case-study"
-version: "0.1.0"
-doi: "TBD-0.1.0"
+version: "0.3.3"
+doi: "TBD-0.3.3"
 status: "Active"
 created: "2026-02-27"
-updated: "2026-02-27"
+updated: "2026-03-02"
 
 author:
   name: "Shawn C. Wright"
@@ -29,89 +29,139 @@ ai_assisted: "partial"
 dependencies: []
 
 anchors:
-  - "CRI-CORE-RACI-Finance-Demo-v0.1.0"
+  - "CRI-CORE-RACI-Finance-Demo-v0.3.3"
 ---
 
 # CRI-CORE RACI Finance Demo
 
-## Operationalizing RACI in an Agentic Environment
+## Deterministic Commit Gating in an Agentic Finance Workflow
 
-This repository demonstrates how CRI-CORE enforces structural responsibility at the mutation boundary in an AI-driven finance workflow.
+This repository demonstrates how **CRI-CORE** enforces structural
+responsibility at the mutation boundary in an AI-assisted finance
+workflow.
 
-Traditional RACI models assume:
-- Linear workflows
-- Human-only actors
-- Static role boundaries
-- Approval at predictable checkpoints
+The focus is not policy semantics or lifecycle orchestration.
 
-Agentic systems disrupt this model:
-- AI proposes actions continuously
-- Responsibility boundaries blur
-- Decisions become distributed
-- State mutation can occur rapidly
+The focus is this:
 
-This demo shows how CRI-CORE restores enforceable responsibility by requiring structural validation before any governed state mutation is authorized.
+> A governed state mutation may only occur if structural responsibility
+> constraints pass deterministic validation.
 
 ---
 
-## Business Scenario: Budget Reallocation
+## Business Scenario
 
-An AI agent proposes a $2M budget reallocation between cost centers.
+An AI system proposes a budget reallocation between cost centers.
 
-RACI roles:
-- **Proposer** – AI system proposing reallocation
-- **Responsible** – Finance Manager validating operational feasibility
-- **Accountable** – CFO authorizing financial impact
+Declared roles:
 
-The system enforces:
+-   **Proposer** -- AI system generating the recommendation\
+-   **Responsible** -- Finance Manager validating feasibility\
+-   **Accountable** -- CFO authorizing financial impact\
+-   **Consulted** -- Compliance review
 
-- Required roles must be declared
-- Each required role must be satisfied by exactly one actor
-- No identity may satisfy multiple required roles
-- Conflict-of-interest flags invalidate approval
-- Mutation authorization occurs only if structural conditions pass
+CRI-CORE enforces:
 
-If validation fails, `commit_allowed = False`.
+-   Required roles must be declared
+-   Each required role must be satisfied
+-   No identity may satisfy multiple required roles
+-   Structural independence is mechanically validated
+-   Commit authorization is atomic and centralized
+
+If structural validation fails:
+
+    commit_allowed = False
 
 ---
 
 ## What This Demonstrates
 
-This is not lifecycle governance.
-This is not AI ethics policy.
-This is not semantic evaluation.
+This is **not**:
+
+-   Lifecycle governance
+-   AI ethics policy
+-   Semantic evaluation
+-   Financial correctness validation
 
 This is deterministic structural enforcement.
 
-CRI-CORE ensures:
+The kernel:
 
-- Separation of duties is mechanically validated
-- Responsibility is structurally distinct
-- Contract versions are respected
-- Mutation authorization is atomic and centralized
+-   Validates separation of duties
+-   Enforces contract version compliance
+-   Materializes cryptographic integrity artifacts
+-   Seals the run state
+-   Gates commit authorization
 
 The kernel does not interpret intent.
+
 It enforces structure.
 
 ---
 
-## Example Outcomes
+## Scenarios Included
 
-### Scenario 1 – Valid Separation of Duties
-Distinct Proposer, Responsible, and Accountable identities  
-Result: `commit_allowed = True`
+### 1. Valid Separation of Duties
 
-### Scenario 2 – Self-Approval Attempt
-CFO attempts to act as both Proposer and Accountable  
-Result: `commit_allowed = False`
+Distinct Responsible and Accountable identities.
 
-### Scenario 3 – Conflict Flag Raised
-Accountable role marked with conflict-of-interest flag  
-Result: `commit_allowed = False`
+Result:
 
-### Scenario 4 – Missing Required Role
-Accountable role not declared  
-Result: `commit_allowed = False`
+    commit_allowed = True
+
+### 2. Reused Identity (Violation)
+
+The same identity attempts to satisfy both:
+
+-   Responsible
+-   Accountable
+
+Result:
+
+    commit_allowed = False
+
+The violation is structural, not semantic.
+
+---
+
+## How to Run
+
+Install locally (editable mode recommended):
+
+    pip install -e .
+
+Run the valid scenario:
+
+    python runner/run_demo.py valid
+
+Run the violation scenario:
+
+    python runner/run_demo.py violation
+
+Each run:
+
+-   Materializes a local run directory under `outputs/runs/`
+-   Generates:
+    -   `claim.json`
+    -   `contract.json`
+    -   `binding.json`
+    -   `payload.tar.gz`
+    -   `SHA256SUMS.txt`
+    -   `SEAL.json`
+-   Executes the full CRI-CORE enforcement pipeline
+-   Prints replay instructions for independent verification
+
+---
+
+## Replayability
+
+Every run prints instructions to independently recompute:
+
+    run_enforcement_pipeline('.', expected_contract_version='0.3.0')
+
+No runner logic is required to verify the decision.
+
+This demonstrates deterministic, replayable enforcement.
 
 ---
 
@@ -119,13 +169,15 @@ Result: `commit_allowed = False`
 
 This demo frames CRI-CORE as:
 
-> Executable RACI enforcement for agentic systems.
+> Executable separation-of-duties enforcement for agentic systems.
 
 Instead of asking:
-"Who owns this in an AI-driven workflow?"
+
+"Who owns this decision?"
 
 We ask:
-"Can this state mutation occur unless ownership is structurally validated?"
+
+"Can this mutation occur unless ownership is structurally validated?"
 
 That is the mutation boundary.
 
@@ -133,14 +185,20 @@ That is the mutation boundary.
 
 ## Intended Audience
 
-- Enterprise Governance Leaders
-- CFO / Finance Transformation Teams
-- AI Risk & Compliance Officers
-- SOX / Separation-of-Duties Architects
-- Workforce Intelligence & Agentic Orchestration Designers
+-   Enterprise Governance Leaders\
+-   Finance Transformation Teams\
+-   AI Risk & Compliance Officers\
+-   Separation-of-Duties Architects\
+-   Agentic Orchestration Designers
 
 ---
 
 ## License
 
 Apache 2.0
+
+--- 
+
+<div align="center">
+  <sub>© 2025 Waveframe Labs — Independent Open-Science Research Entity • Governed under the Aurora Research Initiative (ARI)</sub>
+</div>

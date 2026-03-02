@@ -1,0 +1,48 @@
+{
+  "identities": {
+    "required_roles": [
+      "Responsible",
+      "Accountable",
+      "Consulted",
+      "Informed"
+    ],
+    "actors": [
+      {
+        "id": "cfo-001",
+        "type": "human",
+        "role": "Responsible"
+      },
+      {
+        "id": "cfo-001",
+        "type": "human",
+        "role": "Accountable"
+      },
+      {
+        "id": "finance-controller-007",
+        "type": "human",
+        "role": "Consulted"
+      },
+      {
+        "id": "audit-log-system",
+        "type": "service",
+        "role": "Informed"
+      }
+    ],
+    "conflict_flags": {
+      "cfo-001": false,
+      "finance-controller-007": false,
+      "audit-log-system": false
+    }
+  },
+
+  "integrity": {
+    "workflow_execution_ref": "wf-finance-q2-2026-002",
+    "run_payload_ref": "payload-ref-fin-0002",
+    "attestation_ref": "attest-fin-0002"
+  },
+
+  "publication": {
+    "repository_ref": "cricore-raci-finance-demo",
+    "commit_ref": "TBD"
+  }
+}

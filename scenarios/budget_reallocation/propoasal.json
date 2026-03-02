@@ -1,0 +1,14 @@
+{
+  "title": "FY26 Q2 Strategic Budget Reallocation",
+  "proposal_id": "FIN-REALLOC-2026-0001",
+  "submitted_utc": "2026-03-02T14:00:00Z",
+  "submitted_by": {
+    "id": "ai-strategy-agent-01",
+    "type": "service"
+  },
+  "mutation_type": "budget_reallocation",
+  "amount_usd": 1250000,
+  "from_cost_center": "CC-4100",
+  "to_cost_center": "CC-6200",
+  "rationale": "Reallocate underutilized marketing funds to AI governance initiative following Q1 performance review."
+}

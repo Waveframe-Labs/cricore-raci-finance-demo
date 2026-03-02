@@ -1,0 +1,81 @@
+---
+title: "Budget Reallocation Policy — RACI Enforcement Model"
+filetype: "specification"
+type: "normative"
+domain: "case-study"
+version: "0.1.0"
+doi: "TBD-0.1.0"
+status: "Active"
+created: "2026-03-02"
+updated: "2026-03-02"
+
+author:
+  name: "Shawn C. Wright"
+  email: "swright@waveframelabs.org"
+  orcid: "https://orcid.org/0009-0006-6043-9295"
+
+maintainer:
+  name: "Waveframe Labs"
+  url: "https://waveframelabs.org"
+
+license: "Apache-2.0"
+
+copyright:
+  holder: "Waveframe Labs"
+  year: "2026"
+
+ai_assisted: "partial"
+
+dependencies:
+  - "../../runner/run_demo.py"
+  - "./proposal.json"
+  - "./run_context_valid.json"
+  - "./run_context_violation.json"
+
+anchors:
+  - "RACIFinancePolicy-v0.1.0"
+---
+
+policy_id: "finance-budget-reallocation-v1"
+mutation_type: "budget_reallocation"
+
+description: >
+  Domain-level policy for a budget reallocation scenario. This policy is consumed by the demo
+  runner to determine required roles and structural constraints for CRI-CORE enforcement.
+  CRI-CORE does not interpret this policy; it only enforces the run_context it receives.
+
+thresholds:
+  - name: "standard"
+    when:
+      amount_lte_usd: 500000
+    require:
+      required_roles:
+        - "responsible"
+        - "accountable"
+    notes: >
+      Standard reallocation threshold. Requires Responsible + Accountable.
+
+  - name: "elevated"
+    when:
+      amount_gt_usd: 500000
+    require:
+      required_roles:
+        - "responsible"
+        - "accountable"
+        - "consulted"
+    notes: >
+      Elevated threshold. Adds Consulted as a required role.
+
+role_constraints:
+  separation_of_duties: true
+  rule: >
+    No single identity (id,type) may satisfy more than one role in required_roles.
+
+conflict_of_interest:
+  enforce_conflict_flags: true
+  rule: >
+    If run_context.identities.conflict_flags marks any required-role actor_id true, fail independence.
+
+publication_requirements:
+  require_publication_stage: true
+  require_commit_gate: true

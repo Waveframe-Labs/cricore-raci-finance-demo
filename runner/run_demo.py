@@ -4,8 +4,8 @@ title: "CRI-CORE RACI Finance Demo Runner"
 filetype: "operational"
 type: "non-normative"
 domain: "case-study"
-version: "0.3.1"
-doi: "TBD-0.3.1"
+version: "0.3.2"
+doi: "TBD-0.3.2"
 status: "Active"
 created: "2026-03-02"
 updated: "2026-03-02"
@@ -32,7 +32,7 @@ dependencies:
   - "../scenarios/budget_reallocation/proposal.json"
 
 anchors:
-  - "CRI-CORE-RACI-Finance-Runner-v0.3.1"
+  - "CRI-CORE-RACI-Finance-Runner-v0.3.2"
 ---
 """
 
@@ -44,7 +44,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Tuple
+from typing import Any, Dict, List, Mapping
 
 from cricore.enforcement.execution import run_enforcement_pipeline
 from cricore.integrity.finalize import finalize_run_integrity
@@ -107,6 +107,14 @@ def _list_run_dir(run_root: Path) -> None:
             continue
         rel = p.relative_to(run_root)
         print(f"  - {rel.as_posix()}")
+
+
+def _print_replay_footer(run_root: Path) -> None:
+    print("\nReplay This Run Independently:")
+    print(f"  cd {run_root}")
+    print("  python -c \"from cricore.enforcement.execution import run_enforcement_pipeline; "
+          "results, commit_allowed = run_enforcement_pipeline('.', expected_contract_version='0.3.0'); "
+          "print(commit_allowed)\"")
 
 
 # -----------------------------------------------------------------------------
@@ -183,7 +191,6 @@ def _materialize_run(run_root: Path, *, run_id: str, run_context: Dict[str, Any]
     run_root.mkdir(parents=True, exist_ok=True)
     (run_root / "validation").mkdir(parents=True, exist_ok=True)
 
-    # Claim artifact (opaque to kernel, required for >=0.3.0 binding rules)
     _write_json(
         run_root / RUN_CLAIM_FILENAME,
         {
@@ -194,7 +201,6 @@ def _materialize_run(run_root: Path, *, run_id: str, run_context: Dict[str, Any]
         },
     )
 
-    # Contract referencing claim
     _write_json(
         run_root / "contract.json",
         {
@@ -224,8 +230,6 @@ def _execute(label: str, run_context: Dict[str, Any]) -> None:
     run_root = OUTPUTS_ROOT / run_id
 
     _materialize_run(run_root, run_id=run_id, run_context=run_context)
-
-    # Build binding + SEAL artifacts before enforcement
     finalize_run_integrity(run_root)
 
     results, commit_allowed = run_enforcement_pipeline(
@@ -236,8 +240,15 @@ def _execute(label: str, run_context: Dict[str, Any]) -> None:
 
     print(f"\n== {label} ==")
     _print_stage_results(results)
+
+    if label.startswith("VIOLATION"):
+        print("\nStructural Difference From VALID:")
+        print("  - finance-mgr-001 assigned to both 'responsible' and 'accountable'")
+        print("  - Violates required role independence constraint")
+
     print(f"\nCOMMIT: {'allowed' if commit_allowed else 'blocked'}")
     _list_run_dir(run_root)
+    _print_replay_footer(run_root)
 
 
 # -----------------------------------------------------------------------------
@@ -266,3 +277,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    

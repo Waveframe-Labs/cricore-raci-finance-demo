@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+title: "CRI-CORE RACI Finance Demo"
+message: "If you use this demonstration in research, governance discussions, or derivative work, please cite it using the metadata below."
+type: software
+
+authors:
+  - family-names: Wright
+    given-names: Shawn C.
+    email: swright@waveframelabs.org
+    orcid: "https://orcid.org/0009-0006-6043-9295"
+
+abstract: >
+  The CRI-CORE RACI Finance Demo is an executable demonstration of
+  deterministic commit gating in an AI-assisted financial workflow.
+  The example models a budget reallocation scenario in which an AI
+  system proposes a financial change and defined human roles must
+  validate the action before the system is permitted to commit the
+  mutation.
+
+  The demonstration uses a simplified RACI responsibility structure
+  to illustrate how separation-of-duties constraints can be enforced
+  as executable structural guarantees. The CRI-CORE enforcement kernel
+  evaluates the structural contract for the run and produces a single
+  deterministic authorization decision indicating whether the mutation
+  is admissible.
+
+  The repository exists to show how accountability requirements can be
+  enforced mechanically at the mutation boundary in AI-assisted
+  decision systems.
+
+repository-code: "https://github.com/Waveframe-Labs/cricore-raci-finance-demo"
+url: "https://github.com/Waveframe-Labs/cricore-raci-finance-demo"
+
+license: Apache-2.0
+
+version: "0.3.4"
+date-released: 2026-03-03

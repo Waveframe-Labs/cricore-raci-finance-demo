@@ -3,8 +3,8 @@ title: "CRI-CORE RACI Finance Demo — Executable Accountability in an Agentic E
 filetype: "documentation"
 type: "non-normative"
 domain: "case-study"
-version: "0.3.3"
-doi: "TBD-0.3.3"
+version: "0.3.4"
+doi: "TBD-0.3.4"
 status: "Active"
 created: "2026-02-27"
 updated: "2026-03-03"
@@ -30,7 +30,7 @@ dependencies:
   - "cricore>=0.6.0"  
 
 anchors:
-  - "CRI-CORE-RACI-Finance-Demo-v0.3.3"
+  - "CRI-CORE-RACI-Finance-Demo-v0.3.4"
 ---
 
 # CRI-CORE RACI Finance Demo

@@ -7,7 +7,7 @@ version: "0.3.3"
 doi: "TBD-0.3.3"
 status: "Active"
 created: "2026-02-27"
-updated: "2026-03-02"
+updated: "2026-03-03"
 
 author:
   name: "Shawn C. Wright"
@@ -26,7 +26,8 @@ copyright:
 
 ai_assisted: "partial"
 
-dependencies: []
+dependencies:
+  - "cricore>=0.6.0"  
 
 anchors:
   - "CRI-CORE-RACI-Finance-Demo-v0.3.3"
@@ -34,11 +35,10 @@ anchors:
 
 # CRI-CORE RACI Finance Demo
 
-## Deterministic Commit Gating in an Agentic Finance Workflow
+**Deterministic Commit Gating in an Agentic Finance Workflow**
 
-This repository demonstrates how **CRI-CORE** enforces structural
-responsibility at the mutation boundary in an AI-assisted finance
-workflow.
+This repository demonstrates how **CRI-CORE** enforces structural responsibility
+at the mutation boundary in an AI-assisted finance workflow.
 
 The focus is not policy semantics or lifecycle orchestration.
 
@@ -55,18 +55,18 @@ An AI system proposes a budget reallocation between cost centers.
 
 Declared roles:
 
--   **Proposer** -- AI system generating the recommendation\
--   **Responsible** -- Finance Manager validating feasibility\
--   **Accountable** -- CFO authorizing financial impact\
--   **Consulted** -- Compliance review
+- **Proposer** — AI system generating the recommendation  
+- **Responsible** — Finance Manager validating feasibility  
+- **Accountable** — CFO authorizing financial impact  
+- **Consulted** — Compliance review  
 
 CRI-CORE enforces:
 
--   Required roles must be declared
--   Each required role must be satisfied
--   No identity may satisfy multiple required roles
--   Structural independence is mechanically validated
--   Commit authorization is atomic and centralized
+- Required roles must be declared
+- Each required role must be satisfied
+- No identity may satisfy multiple required roles
+- Structural independence is mechanically validated
+- Commit authorization is atomic and centralized
 
 If structural validation fails:
 
@@ -78,20 +78,20 @@ If structural validation fails:
 
 This is **not**:
 
--   Lifecycle governance
--   AI ethics policy
--   Semantic evaluation
--   Financial correctness validation
+- Lifecycle governance
+- AI ethics policy
+- Semantic evaluation
+- Financial correctness validation
 
 This is deterministic structural enforcement.
 
 The kernel:
 
--   Validates separation of duties
--   Enforces contract version compliance
--   Materializes cryptographic integrity artifacts
--   Seals the run state
--   Gates commit authorization
+- Validates separation of duties
+- Enforces contract version compliance
+- Materializes cryptographic integrity artifacts
+- Seals the run state
+- Gates commit authorization
 
 The kernel does not interpret intent.
 
@@ -113,8 +113,8 @@ Result:
 
 The same identity attempts to satisfy both:
 
--   Responsible
--   Accountable
+- Responsible
+- Accountable
 
 Result:
 
@@ -124,11 +124,19 @@ The violation is structural, not semantic.
 
 ---
 
+## Installation
+
+This demo depends on the public **CRI-CORE** enforcement kernel.
+
+Install the dependency:
+
+    pip install cricore>=0.6.0
+
+Clone this repository and run the demo from the project root.
+
+---
+
 ## How to Run
-
-Install locally (editable mode recommended):
-
-    pip install -e .
 
 Run the valid scenario:
 
@@ -140,22 +148,22 @@ Run the violation scenario:
 
 Each run:
 
--   Materializes a local run directory under `outputs/runs/`
--   Generates:
-    -   `claim.json`
-    -   `contract.json`
-    -   `binding.json`
-    -   `payload.tar.gz`
-    -   `SHA256SUMS.txt`
-    -   `SEAL.json`
--   Executes the full CRI-CORE enforcement pipeline
--   Prints replay instructions for independent verification
+- Materializes a local run directory under `outputs/runs/`
+- Generates:
+  - `claim.json`
+  - `contract.json`
+  - `binding.json`
+  - `payload.tar.gz`
+  - `SHA256SUMS.txt`
+  - `SEAL.json`
+- Executes the full CRI-CORE enforcement pipeline
+- Prints replay instructions for independent verification
 
 ---
 
 ## Replayability
 
-Every run prints instructions to independently recompute:
+Every run prints instructions to independently recompute enforcement:
 
     run_enforcement_pipeline('.', expected_contract_version='0.3.0')
 
@@ -185,11 +193,11 @@ That is the mutation boundary.
 
 ## Intended Audience
 
--   Enterprise Governance Leaders\
--   Finance Transformation Teams\
--   AI Risk & Compliance Officers\
--   Separation-of-Duties Architects\
--   Agentic Orchestration Designers
+- Enterprise Governance Leaders  
+- Finance Transformation Teams  
+- AI Risk & Compliance Officers  
+- Separation-of-Duties Architects  
+- Agentic Orchestration Designers  
 
 ---
 
@@ -197,7 +205,7 @@ That is the mutation boundary.
 
 Apache 2.0
 
---- 
+---
 
 <div align="center">
   <sub>© 2026 Waveframe Labs — Independent Open-Science Research Entity • Governed under the Aurora Research Initiative (ARI)</sub>
